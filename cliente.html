@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuevo Cliente</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <h1>Crear Cliente</h1>
+
+  <label>Nombre:</label>
+  <input type="text" id="nombre" />
+
+  <label>Teléfono:</label>
+  <input type="text" id="telefono" />
+
+  <label>Notas:</label>
+  <textarea id="notas"></textarea>
+
+  <button id="guardar">Guardar</button>
+  <p id="msg"></p>
+
+  <script type="module">
+    import { supabase } from './js/config.js';
+
+    document.getElementById('guardar').addEventListener('click', async () => {
+      const nombre = document.getElementById('nombre').value;
+      const telefono = document.getElementById('telefono').value;
+      const notas = document.getElementById('notas').value;
+
+      if (!nombre) return alert('Ingresa el nombre');
+
+      const { error } = await supabase.from('clientes').insert([{ nombre, telefono, notas }]);
+      document.getElementById('msg').textContent = error ? '❌ ' + error.message : '✅ Cliente creado.';
+    });
+  </script>
+</body>
+</html>

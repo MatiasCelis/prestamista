@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Prestamista</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="login-container">
+    <h1>Prestamista 💰</h1>
+    <input type="email" id="email" placeholder="Correo electrónico" />
+    <input type="password" id="password" placeholder="Contraseña" />
+    <button id="login-btn">Iniciar sesión</button>
+    <button id="signup-btn">Crear cuenta</button>
+    <p id="msg"></p>
+  </div>
+
+  <script type="module">
+    import { supabase } from './js/config.js';
+
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const msg = document.getElementById('msg');
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.value,
+        password: password.value
+      });
+      if (error) {
+        msg.textContent = '❌ ' + error.message;
+      } else {
+        window.location.href = 'index.html';
+      }
+    });
+
+    document.getElementById('signup-btn').addEventListener('click', async () => {
+      const { error } = await supabase.auth.signUp({
+        email: email.value,
+        password: password.value
+      });
+      msg.textContent = error ? '❌ ' + error.message : '✅ Revisa tu correo para confirmar.';
+    });
+  </script>
+</body>
+</html>

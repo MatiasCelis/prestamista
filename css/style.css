@@ -1,0 +1,36 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 20px;
+  background: #f7f7f7;
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+}
+
+.login-container {
+  max-width: 300px;
+  margin: 100px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input, button, select, textarea {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  width: 100%;
+}
+
+button {
+  background: #0a8754;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+
+button:hover {
+  background: #087f4a;
+}
