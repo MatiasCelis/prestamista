@@ -19,7 +19,11 @@
     <p id="msg"></p>
   </div>
 
-  <!-- Cargar el módulo JS al final para que el DOM esté listo -->
-  <script type="module" src="./js/auth.js"></script>
+    <!-- Scripts -->
+<script type="module">
+  import { supabase } from './js/config.js';
+  import './js/auth.js';
+</script>
+
 </body>
 </html>

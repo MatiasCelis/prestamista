@@ -40,7 +40,11 @@
   </table>
 
   <!-- Scripts -->
-  <script type="module" src="./js/auth.js"></script>
-  <script type="module" src="./js/index.js"></script>
+<script type="module">
+  import { supabase } from './js/config.js';
+  import './js/prestamos.js';
+  import './js/auth.js';
+</script>
+
 </body>
 </html>

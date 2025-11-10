@@ -30,7 +30,10 @@
   </main>
 
   <!-- Scripts -->
-  <script type="module" src="./js/auth.js"></script>
-  <script type="module" src="./js/clientes.js"></script>
+<script type="module">
+  import { supabase } from './js/config.js';
+  import './js/clientes.js';
+</script>
+
 </body>
 </html>
