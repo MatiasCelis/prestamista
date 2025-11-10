@@ -1,43 +1,26 @@
-// js/clientes.js
 import { supabase } from './config.js';
 
-const nombre = document.getElementById('nombre');
-const telefono = document.getElementById('telefono');
-const notas = document.getElementById('notas');
-const msg = document.getElementById('msg');
-const guardarBtn = document.getElementById('guardar');
-const logoutBtn = document.getElementById('logout');
+document.addEventListener('DOMContentLoaded', () => {
+  const nombreInput = document.getElementById('nombre');
+  const telefonoInput = document.getElementById('telefono');
+  const notasInput = document.getElementById('notas');
+  const guardarBtn = document.getElementById('guardar');
+  const msgEl = document.getElementById('msg');
 
-// Crear cliente
-guardarBtn.addEventListener('click', async () => {
-  const nombreVal = nombre.value.trim();
-  const telefonoVal = telefono.value.trim();
-  const notasVal = notas.value.trim();
+  guardarBtn?.addEventListener('click', async () => {
+    const nombre = nombreInput.value.trim();
+    const telefono = telefonoInput.value.trim();
+    const notas = notasInput.value.trim();
 
-  if (!nombreVal) {
-    msg.textContent = '⚠️ Debes ingresar el nombre del cliente.';
-    msg.style.color = 'red';
-    return;
-  }
+    if (!nombre) return msgEl.textContent = '⚠️ Ingresa el nombre';
 
-  const { error } = await supabase
-    .from('clientes')
-    .insert([{ nombre: nombreVal, telefono: telefonoVal, notas: notasVal }]);
-
-  if (error) {
-    msg.textContent = '❌ ' + error.message;
-    msg.style.color = 'red';
-  } else {
-    msg.textContent = '✅ Cliente creado correctamente.';
-    msg.style.color = 'green';
-    nombre.value = '';
-    telefono.value = '';
-    notas.value = '';
-  }
-});
-
-// Logout
-logoutBtn.addEventListener('click', async () => {
-  await supabase.auth.signOut();
-  window.location.href = 'login.html';
+    const { error } = await supabase.from('clientes').insert([{ nombre, telefono, notas }]);
+    msgEl.textContent = error ? '❌ ' + error.message : '✅ Cliente creado';
+    
+    if (!error) {
+      nombreInput.value = '';
+      telefonoInput.value = '';
+      notasInput.value = '';
+    }
+  });
 });

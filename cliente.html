@@ -7,33 +7,22 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header>
-    <h1>👤 Crear Cliente</h1>
-    <nav>
-      <button onclick="window.location.href='index.html'">🏠 Volver</button>
-      <button id="logout">Salir</button>
-    </nav>
-  </header>
+  <h1>Crear Cliente</h1>
 
-  <main>
-    <label>Nombre:</label>
-    <input type="text" id="nombre" placeholder="Ej: Juan Pérez" />
+  <label>Nombre:</label>
+  <input type="text" id="nombre" />
 
-    <label>Teléfono:</label>
-    <input type="text" id="telefono" placeholder="+56 9 1234 5678" />
+  <label>Teléfono:</label>
+  <input type="text" id="telefono" />
 
-    <label>Notas:</label>
-    <textarea id="notas" placeholder="Comentarios o detalles del cliente"></textarea>
+  <label>Notas:</label>
+  <textarea id="notas"></textarea>
 
-    <button id="guardar">💾 Guardar</button>
-    <p id="msg"></p>
-  </main>
+  <button id="guardar">Guardar</button>
+  <p id="msg"></p>
 
-  <!-- Scripts -->
-<script type="module">
-  import { supabase } from './js/config.js';
-  import './js/clientes.js';
-</script>
-
+  <!-- Scripts al final -->
+  <script type="module" src="./js/config.js"></script>
+  <script type="module" src="./js/clientes.js"></script>
 </body>
 </html>
