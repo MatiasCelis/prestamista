@@ -7,33 +7,30 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <h1>Crear Cliente</h1>
+  <header>
+    <h1>👤 Crear Cliente</h1>
+    <nav>
+      <button onclick="window.location.href='index.html'">🏠 Volver</button>
+      <button id="logout">Salir</button>
+    </nav>
+  </header>
 
-  <label>Nombre:</label>
-  <input type="text" id="nombre" />
+  <main>
+    <label>Nombre:</label>
+    <input type="text" id="nombre" placeholder="Ej: Juan Pérez" />
 
-  <label>Teléfono:</label>
-  <input type="text" id="telefono" />
+    <label>Teléfono:</label>
+    <input type="text" id="telefono" placeholder="+56 9 1234 5678" />
 
-  <label>Notas:</label>
-  <textarea id="notas"></textarea>
+    <label>Notas:</label>
+    <textarea id="notas" placeholder="Comentarios o detalles del cliente"></textarea>
 
-  <button id="guardar">Guardar</button>
-  <p id="msg"></p>
+    <button id="guardar">💾 Guardar</button>
+    <p id="msg"></p>
+  </main>
 
-  <script type="module">
-    import { supabase } from './js/config.js';
-
-    document.getElementById('guardar').addEventListener('click', async () => {
-      const nombre = document.getElementById('nombre').value;
-      const telefono = document.getElementById('telefono').value;
-      const notas = document.getElementById('notas').value;
-
-      if (!nombre) return alert('Ingresa el nombre');
-
-      const { error } = await supabase.from('clientes').insert([{ nombre, telefono, notas }]);
-      document.getElementById('msg').textContent = error ? '❌ ' + error.message : '✅ Cliente creado.';
-    });
-  </script>
+  <!-- Scripts -->
+  <script type="module" src="./js/auth.js"></script>
+  <script type="module" src="./js/clientes.js"></script>
 </body>
 </html>
