@@ -66,8 +66,8 @@ async function renderPrestamos() {
       const tr = document.createElement('tr');
 
       const estadoBtn = document.createElement('button');
-      estadoBtn.textContent = p.estado === 'listo' ? '✅ Listo' : '⏳ Pendiente';
-      estadoBtn.className = p.estado === 'listo' ? 'btn-listo' : 'btn-pendiente';
+      estadoBtn.textContent = p.estado === 'pagado' ? '✅ Pagado' : '⏳ Pendiente';
+      estadoBtn.className = p.estado === 'pagado' ? 'btn-listo' : 'btn-pendiente';
 
       estadoBtn.addEventListener('click', () => {
         prestamoSeleccionado = p;
@@ -113,7 +113,7 @@ filtroSelect?.addEventListener('change', renderPrestamos);
 btnConfirmar?.addEventListener('click', async () => {
   if (!prestamoSeleccionado) return;
   try {
-    const nuevoEstado = prestamoSeleccionado.estado === 'listo' ? 'pendiente' : 'listo';
+    const nuevoEstado = prestamoSeleccionado.estado === 'pagado' ? 'pendiente' : 'pagado';
     await actualizarEstadoPrestamo(prestamoSeleccionado.id, nuevoEstado);
     msgEl.textContent = `✅ Estado actualizado a ${nuevoEstado}`;
     cerrarModal();
