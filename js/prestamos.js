@@ -1,18 +1,23 @@
 // js/prestamos.js
 import { supabase } from './config.js';
-import { buscarClientes } from './clientes.js';
 
 // =====================
-// SELECTORES GENERALES
+// SELECTORES
 // =====================
-const tabla = document.getElementById('tablaPrestamos');
+const tabla = document.getElementById('tabla');
+const filtroSelect = document.getElementById('filtro');
 const msgEl = document.getElementById('msg');
+const modal = document.getElementById('modalConfirmacion');
+const btnConfirmar = document.getElementById('btnConfirmar');
+const btnCancelar = document.getElementById('btnCancelar');
+
+let prestamoSeleccionado = null; // guardará el préstamo a cambiar
 
 // =====================
-// FUNCIONES PRINCIPALES
+// FUNCIONES
 // =====================
-async function obtenerPrestamos() {
-  const { data, error } = await supabase
+async function obtenerPrestamos(filtro = 'pendiente') {
+  let query = supabase
     .from('prestamos')
     .select(`
       id,
@@ -23,6 +28,9 @@ async function obtenerPrestamos() {
     `)
     .order('id', { ascending: false });
 
+  if (filtro !== 'todos') query = query.eq('estado', filtro);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -38,13 +46,20 @@ async function actualizarEstadoPrestamo(id, nuevoEstado) {
 }
 
 // =====================
-// RENDER DE TABLA (INDEX)
+// RENDER TABLA
 // =====================
 async function renderPrestamos() {
   try {
-    const prestamos = await obtenerPrestamos();
+    const filtro = filtroSelect?.value || 'pendiente';
+    const prestamos = await obtenerPrestamos(filtro);
+
     const tbody = tabla.querySelector('tbody');
     tbody.innerHTML = '';
+
+    if (!prestamos.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No hay préstamos ${filtro}</td></tr>`;
+      return;
+    }
 
     prestamos.forEach((p) => {
       const tr = document.createElement('tr');
@@ -52,32 +67,22 @@ async function renderPrestamos() {
       const estadoBtn = document.createElement('button');
       estadoBtn.textContent = p.estado === 'listo' ? '✅ Listo' : '⏳ Pendiente';
       estadoBtn.className = p.estado === 'listo' ? 'btn-listo' : 'btn-pendiente';
-      estadoBtn.addEventListener('click', async () => {
-        estadoBtn.disabled = true;
-        const nuevoEstado = p.estado === 'listo' ? 'pendiente' : 'listo';
-        try {
-          await actualizarEstadoPrestamo(p.id, nuevoEstado);
-          msgEl.textContent = `✅ Estado actualizado a ${nuevoEstado}`;
-          await renderPrestamos();
-        } catch (err) {
-          console.error(err);
-          msgEl.textContent = '❌ Error al actualizar estado';
-        } finally {
-          estadoBtn.disabled = false;
-        }
+
+      estadoBtn.addEventListener('click', () => {
+        prestamoSeleccionado = p;
+        abrirModal(`¿Actualizar estado del préstamo de ${p.clientes?.nombre || 'cliente'}?`);
       });
 
       tr.innerHTML = `
         <td>${p.id}</td>
         <td>${p.clientes?.nombre || '—'}</td>
         <td>$${p.monto?.toLocaleString()}</td>
-        <td>${p.estado || 'pendiente'}</td>
+        <td>${p.estado}</td>
       `;
 
       const tdAccion = document.createElement('td');
       tdAccion.appendChild(estadoBtn);
       tr.appendChild(tdAccion);
-
       tbody.appendChild(tr);
     });
   } catch (err) {
@@ -87,92 +92,42 @@ async function renderPrestamos() {
 }
 
 // =====================
-// NUEVO PRÉSTAMO (AGREGAR.HTML)
+// MODAL
 // =====================
-const selectCliente = document.getElementById('selectCliente');
-const montoInput = document.getElementById('monto');
-const interesInput = document.getElementById('interes');
-const btnAgregar = document.getElementById('btnAgregarPrestamo');
-const btnIrClientes = document.getElementById('btnIrClientes');
-const btnVolverAlInicio = document.getElementById('btnVolverAlInicio');
-
-async function cargarClientes() {
-  try {
-    const { data, error } = await supabase
-      .from('clientes')
-      .select('id, nombre')
-      .order('nombre', { ascending: true });
-
-    if (error) throw error;
-
-    if (selectCliente) {
-      selectCliente.innerHTML = '<option value="">Selecciona un cliente</option>';
-      data.forEach(c => {
-        const option = document.createElement('option');
-        option.value = c.id;
-        option.textContent = c.nombre;
-        selectCliente.appendChild(option);
-      });
-    }
-  } catch (err) {
-    console.error('Error cargando clientes:', err);
-    if (selectCliente) {
-      selectCliente.innerHTML = '<option value="">❌ Error al cargar clientes</option>';
-    }
-  }
+function abrirModal(mensaje) {
+  document.getElementById('modalMensaje').textContent = mensaje;
+  modal.style.display = 'flex';
 }
 
-async function agregarPrestamo() {
-  try {
-    const clienteId = parseInt(selectCliente?.value || 0);
-    const monto = parseFloat(montoInput?.value || 0);
-    const interes = parseFloat(interesInput?.value || 20);
-
-    if (!clienteId) {
-      msgEl.textContent = '⚠️ Selecciona un cliente válido';
-      return;
-    }
-    if (!monto || monto <= 0) {
-      msgEl.textContent = '⚠️ Ingresa un monto válido';
-      return;
-    }
-
-    const { error } = await supabase.from('prestamos').insert([
-      {
-        cliente_id: clienteId,
-        monto,
-        interes_porcentaje: interes
-      }
-    ]);
-    if (error) throw error;
-
-    msgEl.textContent = '✅ Préstamo guardado correctamente';
-    montoInput.value = '';
-    interesInput.value = '20';
-    selectCliente.value = '';
-  } catch (err) {
-    console.error('Error agregando préstamo', err);
-    msgEl.textContent = '❌ ' + (err.message || err);
-  }
+function cerrarModal() {
+  modal.style.display = 'none';
+  prestamoSeleccionado = null;
 }
 
 // =====================
-// INICIALIZACIÓN AUTOMÁTICA
+// EVENTOS
+// =====================
+filtroSelect?.addEventListener('change', renderPrestamos);
+
+btnConfirmar?.addEventListener('click', async () => {
+  if (!prestamoSeleccionado) return;
+  try {
+    const nuevoEstado = prestamoSeleccionado.estado === 'listo' ? 'pendiente' : 'listo';
+    await actualizarEstadoPrestamo(prestamoSeleccionado.id, nuevoEstado);
+    msgEl.textContent = `✅ Estado actualizado a ${nuevoEstado}`;
+    cerrarModal();
+    renderPrestamos();
+  } catch (err) {
+    console.error(err);
+    msgEl.textContent = '❌ Error al actualizar estado';
+  }
+});
+
+btnCancelar?.addEventListener('click', cerrarModal);
+
+// =====================
+// INICIO
 // =====================
 document.addEventListener('DOMContentLoaded', () => {
-  if (tabla) renderPrestamos(); // solo en index.html
-  if (selectCliente) cargarClientes(); // solo en agregar.html
-
-  btnAgregar?.addEventListener('click', (e) => {
-    e.preventDefault();
-    agregarPrestamo();
-  });
-
-  btnIrClientes?.addEventListener('click', () => {
-    window.location.href = 'cliente.html';
-  });
-
-  btnVolverAlInicio?.addEventListener('click', () => {
-    window.location.href = 'index.html';
-  });
+  renderPrestamos(); // por defecto "pendientes"
 });

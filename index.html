@@ -5,6 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mis Préstamos</title>
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* --- Estilo del modal --- */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .modal-content button {
+      margin: 8px;
+    }
+    #msg {
+      text-align: center;
+      margin: 10px 0;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -18,28 +48,36 @@
 
   <div class="filtros">
     <select id="filtro">
-      <option value="pendiente">Pendientes</option>
-      <option value="pagado">Pagados</option>
+      <option value="pendiente" selected>Pendientes</option>
+      <option value="listo">Listos</option>
       <option value="todos">Todos</option>
     </select>
   </div>
 
+  <div id="msg"></div>
+
   <table id="tabla">
     <thead>
       <tr>
+        <th>ID</th>
+        <th>Cliente</th>
         <th>Monto</th>
-        <th>%</th>
-        <th>Interés</th>
-        <th>Total</th>
-        <th>Préstamo</th>
-        <th>Vencimiento</th>
         <th>Estado</th>
         <th>Acción</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
-  
+
+  <!-- Modal de confirmación -->
+  <div class="modal" id="modalConfirmacion">
+    <div class="modal-content">
+      <p id="modalMensaje">¿Estás seguro de actualizar el estado del préstamo?</p>
+      <button id="btnConfirmar">Sí</button>
+      <button id="btnCancelar">No</button>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script type="module" src="./js/auth.js"></script>
   <script type="module" src="./js/prestamos.js"></script>
