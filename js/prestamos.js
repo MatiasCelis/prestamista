@@ -19,17 +19,19 @@ let prestamoSeleccionado = null; // guardará el préstamo a cambiar
 async function obtenerPrestamos(filtro = 'pendiente') {
   let query = supabase
     .from('prestamos')
-    .select('id, cliente_id, monto, estado') // 👈 SIN el join
+    .select(`
+      id,
+      cliente_id,
+      monto,
+      estado,
+      clientes:cliente_id ( nombre )
+    `)
     .order('id', { ascending: false });
 
   if (filtro !== 'todos') query = query.eq('estado', filtro);
 
   const { data, error } = await query;
-  if (error) {
-    console.error('❌ Error al obtener préstamos:', error);
-    throw error;
-  }
-  console.log('✅ Prestamos obtenidos:', data);
+  if (error) throw error;
   return data || [];
 }
 
