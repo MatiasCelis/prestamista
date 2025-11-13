@@ -10,21 +10,24 @@
   <h1>Agregar Préstamo</h1>
 
   <label>Cliente:</label>
-  <input type="text" id="cliente" placeholder="Escribe al menos 3 letras" list="resultadosClientes" />
-  <datalist id="resultadosClientes"></datalist>
+  <select id="selectCliente">
+    <option value="">Cargando clientes...</option>
+  </select>
 
   <label>Monto:</label>
   <input type="number" id="monto" placeholder="Ej: 50000" />
 
   <label>% Interés:</label>
-  <input type="number" id="interes" value="20" />
+  <input type="number" id="interes" value="20" style="margin-bottom: 10px;" />
 
   <button id="btnAgregarPrestamo">Guardar</button>
+  <!-- <button onclick="window.location.href='cliente.html'">Agregar nuevo cliente</button> -->
+  <button id="btnIrClientes">Agregar nuevo cliente</button>
+  <button id="btnVolverAlInicio">Volver al Inicio</button>
+
   <p id="msg"></p>
 
-<script type="module" src="./js/auth.js"></script>
-<script type="module" src="./js/prestamos.js"></script>
-
-</script>
+  <script type="module" src="./js/auth.js"></script>
+  <script type="module" src="./js/prestamos.js"></script>
 </body>
 </html>

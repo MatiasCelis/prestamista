@@ -1,126 +1,178 @@
 // js/prestamos.js
 import { supabase } from './config.js';
+import { buscarClientes } from './clientes.js';
 
-// SELECTORES tolerantes
-const tablaBody = document.querySelector('#tabla-prestamos tbody') || document.querySelector('#tabla tbody') || null;
-const filtroSelect = document.getElementById('filtro') || document.getElementById('filtro-status') || null;
-const btnAgregar = document.getElementById('btnAgregarPrestamo') || document.getElementById('guardar') || null;
-const clienteInput = document.getElementById('cliente');
-const resultados = document.getElementById('resultados') || document.getElementById('resultadosClientes') || null;
-const montoInput = document.getElementById('monto');
-const interesInput = document.getElementById('interes');
-const msgEl = document.getElementById('msg') || null;
+// =====================
+// SELECTORES GENERALES
+// =====================
+const tabla = document.getElementById('tablaPrestamos');
+const msgEl = document.getElementById('msg');
 
-// Cargar préstamos (filtrado por estado si se pasa)
-export async function cargarPrestamos(estado = 'pendiente') {
+// =====================
+// FUNCIONES PRINCIPALES
+// =====================
+async function obtenerPrestamos() {
+  const { data, error } = await supabase
+    .from('prestamos')
+    .select(`
+      id,
+      cliente_id,
+      monto,
+      estado,
+      clientes ( nombre )
+    `)
+    .order('id', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function actualizarEstadoPrestamo(id, nuevoEstado) {
+  const { error } = await supabase
+    .from('prestamos')
+    .update({ estado: nuevoEstado })
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+}
+
+// =====================
+// RENDER DE TABLA (INDEX)
+// =====================
+async function renderPrestamos() {
   try {
-    let query = supabase
-      .from('prestamos')
-      // Trae también datos del cliente relacionado (nombre)
-      .select('id, cliente_id, monto, interes_porcentaje, interes_monto, total, fecha_prestamo, fecha_vencimiento, estado, clientes!inner(nombre)')
-      .order('fecha_prestamo', { ascending: false });
+    const prestamos = await obtenerPrestamos();
+    const tbody = tabla.querySelector('tbody');
+    tbody.innerHTML = '';
 
-    if (estado && estado !== 'todos') {
-      query = query.eq('estado', estado);
-    }
+    prestamos.forEach((p) => {
+      const tr = document.createElement('tr');
 
-    const { data, error } = await query;
-    if (error) throw error;
+      const estadoBtn = document.createElement('button');
+      estadoBtn.textContent = p.estado === 'listo' ? '✅ Listo' : '⏳ Pendiente';
+      estadoBtn.className = p.estado === 'listo' ? 'btn-listo' : 'btn-pendiente';
+      estadoBtn.addEventListener('click', async () => {
+        estadoBtn.disabled = true;
+        const nuevoEstado = p.estado === 'listo' ? 'pendiente' : 'listo';
+        try {
+          await actualizarEstadoPrestamo(p.id, nuevoEstado);
+          msgEl.textContent = `✅ Estado actualizado a ${nuevoEstado}`;
+          await renderPrestamos();
+        } catch (err) {
+          console.error(err);
+          msgEl.textContent = '❌ Error al actualizar estado';
+        } finally {
+          estadoBtn.disabled = false;
+        }
+      });
 
-    // Renderizar tabla
-    const rows = data.map(p => {
-      const clienteNombre = p.clientes?.nombre || '';
-      // interes_monto y total pueden venir desde el DB (generated columns). Si no, calculemos
-      const interesMonto = p.interes_monto ?? Math.round((p.monto * (p.interes_porcentaje ?? 20)) / 100);
-      const total = p.total ?? Math.round(p.monto + interesMonto);
-      return `
-        <tr>
-          <td>${clienteNombre}</td>
-          <td>${Number(p.monto).toLocaleString()}</td>
-          <td>${Number(p.interes_porcentaje ?? 20)}%</td>
-          <td>${Number(interesMonto).toLocaleString()}</td>
-          <td>${Number(total).toLocaleString()}</td>
-          <td>${p.fecha_prestamo}</td>
-          <td>${p.fecha_vencimiento}</td>
-          <td>${p.estado}</td>
-        </tr>
+      tr.innerHTML = `
+        <td>${p.id}</td>
+        <td>${p.clientes?.nombre || '—'}</td>
+        <td>$${p.monto?.toLocaleString()}</td>
+        <td>${p.estado || 'pendiente'}</td>
       `;
-    }).join('');
 
-    if (tablaBody) tablaBody.innerHTML = rows;
+      const tdAccion = document.createElement('td');
+      tdAccion.appendChild(estadoBtn);
+      tr.appendChild(tdAccion);
+
+      tbody.appendChild(tr);
+    });
   } catch (err) {
-    console.error('Error cargando prestamos', err);
-    if (tablaBody) tablaBody.innerHTML = `<tr><td colspan="8">Error al cargar</td></tr>`;
+    console.error(err);
+    msgEl.textContent = '❌ Error al cargar préstamos';
   }
 }
 
-// Agregar préstamo (toma cliente seleccionado por data-selected-id o por selección en UL)
-export async function agregarPrestamo() {
+// =====================
+// NUEVO PRÉSTAMO (AGREGAR.HTML)
+// =====================
+const selectCliente = document.getElementById('selectCliente');
+const montoInput = document.getElementById('monto');
+const interesInput = document.getElementById('interes');
+const btnAgregar = document.getElementById('btnAgregarPrestamo');
+const btnIrClientes = document.getElementById('btnIrClientes');
+const btnVolverAlInicio = document.getElementById('btnVolverAlInicio');
+
+async function cargarClientes() {
   try {
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('id, nombre')
+      .order('nombre', { ascending: true });
+
+    if (error) throw error;
+
+    if (selectCliente) {
+      selectCliente.innerHTML = '<option value="">Selecciona un cliente</option>';
+      data.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        option.textContent = c.nombre;
+        selectCliente.appendChild(option);
+      });
+    }
+  } catch (err) {
+    console.error('Error cargando clientes:', err);
+    if (selectCliente) {
+      selectCliente.innerHTML = '<option value="">❌ Error al cargar clientes</option>';
+    }
+  }
+}
+
+async function agregarPrestamo() {
+  try {
+    const clienteId = parseInt(selectCliente?.value || 0);
     const monto = parseFloat(montoInput?.value || 0);
     const interes = parseFloat(interesInput?.value || 20);
-    let clienteId = null;
-
-    // buscar cliente id en el atributo data-selected-id (setear por clientes.js cuando se selecciona)
-    if (clienteInput?.dataset?.selectedId) {
-      clienteId = parseInt(clienteInput.dataset.selectedId);
-    } else {
-      // fallback: intentar buscar cliente por nombre exacto y usar el primer resultado
-      const nombre = (clienteInput?.value || '').trim();
-      if (nombre.length >= 3) {
-        const { data } = await supabase.from('clientes').select('id').ilike('nombre', nombre).limit(1);
-        if (data?.length) clienteId = data[0].id;
-      }
-    }
 
     if (!clienteId) {
-      if (msgEl) msgEl.textContent = '⚠️ Selecciona un cliente válido';
-      else alert('Selecciona un cliente válido');
+      msgEl.textContent = '⚠️ Selecciona un cliente válido';
       return;
     }
     if (!monto || monto <= 0) {
-      if (msgEl) msgEl.textContent = '⚠️ Ingresa un monto válido';
+      msgEl.textContent = '⚠️ Ingresa un monto válido';
       return;
     }
 
-    // Inserción: solo cliente_id e interes_porcentaje y monto; triggers en DB asignan user_id, calculan total, vencimiento si los definiste
-    const { error } = await supabase.from('prestamos').insert([{
-      cliente_id: clienteId,
-      monto,
-      interes_porcentaje: interes
-    }]);
-
+    const { error } = await supabase.from('prestamos').insert([
+      {
+        cliente_id: clienteId,
+        monto,
+        interes_porcentaje: interes
+      }
+    ]);
     if (error) throw error;
 
-    if (msgEl) msgEl.textContent = '✅ Préstamo guardado';
-    // limpiar/recargar
-    if (clienteInput) { clienteInput.value = ''; delete clienteInput.dataset.selectedId; }
-    if (montoInput) montoInput.value = '';
-    if (interesInput) interesInput.value = '20';
-    // recargar lista si estamos en index
-    if (typeof cargarPrestamos === 'function') cargarPrestamos(filtroSelect?.value || 'pendiente');
+    msgEl.textContent = '✅ Préstamo guardado correctamente';
+    montoInput.value = '';
+    interesInput.value = '20';
+    selectCliente.value = '';
   } catch (err) {
     console.error('Error agregando préstamo', err);
-    if (msgEl) msgEl.textContent = '❌ ' + (err.message || err);
+    msgEl.textContent = '❌ ' + (err.message || err);
   }
 }
 
-// Conectar eventos al cargar la página
+// =====================
+// INICIALIZACIÓN AUTOMÁTICA
+// =====================
 document.addEventListener('DOMContentLoaded', () => {
-  // cargar inicialmente según filtro (si existe)
-  const estado = filtroSelect?.value || 'pendiente';
-  cargarPrestamos(estado);
+  if (tabla) renderPrestamos(); // solo en index.html
+  if (selectCliente) cargarClientes(); // solo en agregar.html
 
-  filtroSelect?.addEventListener('change', (e) => {
-    cargarPrestamos(e.target.value);
+  btnAgregar?.addEventListener('click', (e) => {
+    e.preventDefault();
+    agregarPrestamo();
   });
 
-  // conectar agregar
-  if (btnAgregar) btnAgregar.addEventListener('click', adicionarHandler);
-});
+  btnIrClientes?.addEventListener('click', () => {
+    window.location.href = 'cliente.html';
+  });
 
-// handler wrapper para evitar error de referencia hoisting
-async function adicionarHandler(e) {
-  e?.preventDefault?.();
-  await agregarPrestamo();
-}
+  btnVolverAlInicio?.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+});

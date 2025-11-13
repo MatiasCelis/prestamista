@@ -29,8 +29,32 @@ button {
   color: white;
   cursor: pointer;
   border: none;
+  margin: 4PX;
 }
 
 button:hover {
   background: #087f4a;
+}
+
+.btn-pendiente {
+  background: #ff9800;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-listo {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
